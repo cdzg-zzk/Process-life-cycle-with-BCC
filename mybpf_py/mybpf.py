@@ -16,6 +16,11 @@ import syscall_event as my_syscall
 import cpudist as my_cpudist
 import cpu_freq as my_freq
 import offcpu_time as my_offcpu
+import softirqs as my_softirqs
+import hardirqs as my_hardirqs
+import cachestat as my_cache
+import oomkiller as my_oomkiller
+import page_fault as my_page_fault
 # # arguments
 # examples = """examples:
 #     ./mybpf -p 181           # target process is 181
@@ -53,8 +58,12 @@ bpf_text = ""
 # bpf_text = my_syscall.process_bpf_text(bpf_text)
 # bpf_text = my_cpudist.process_bpf_text(bpf_text)
 # bpf_text = my_freq.process_bpf_text(bpf_text)
-bpf_text = my_offcpu.process_bpf_text(bpf_text)
-
+# bpf_text = my_offcpu.process_bpf_text(bpf_text)
+# bpf_text = my_softirqs.process_bpf_text(bpf_text)
+# bpf_text = my_hardirqs.process_bpf_text(bpf_text)
+# bpf_text = my_cache.process_bpf_text(bpf_text)
+# bpf_text = my_oomkiller.process_bpf_text(bpf_text)
+bpf_text = my_page_fault.process_bpf_text(bpf_text)
 id = 0
 
 # common replace operation
@@ -74,20 +83,25 @@ comm_module.init_bpf_object(bpf_text)
 # my_syscall.attach_probe(comm_module.bpf_object)
 # my_cpudist.attach_probe(comm_module.bpf_object)
 # my_freq.attach_probe(comm_module.bpf_object)
-my_offcpu.attach_probe(comm_module.bpf_object)
+# my_offcpu.attach_probe(comm_module.bpf_object)
+# my_softirqs.attach_probe(comm_module.bpf_object)
+# my_hardirqs.attach_probe(comm_module.bpf_object)
+# my_cache.attach_probe(comm_module.bpf_object)
+# my_oomkiller.attach_probe(comm_module.bpf_object)
+my_page_fault.attach_probe(comm_module.bpf_object)
 # open poll buffer 
 # my_cs.open_poll_buffer(comm_module.bpf_object)
 # my_exit.open_poll_buffer(comm_module.bpf_object)
 # my_syscall.open_poll_buffer(comm_module.bpf_object)        
-
+# my_oomkiller.open_poll_buffer(comm_module.bpf_object)
 
 start_time = datetime.now()
 while not duration or datetime.now() - start_time < duration:
+    pass
     # print("enter perf buffer poll")
     # comm_module.bpf_object.perf_buffer_poll(timeout=1000)
     # print("exit perf buffer poll")
-    print("continue")
-    time.sleep(1)
+    # print("continue")
 
 
 
@@ -96,7 +110,11 @@ def exit_process():
     print("exit monitor process...")
     # my_cpudist.process_data()
     # my_freq.process_data()
-    my_offcpu.process_data()
+    # my_offcpu.process_data()
+    # my_softirqs.process_data()
+    # my_hardirqs.process_data()
+    my_page_fault.process_data()
+    # my_cache.process_data()
     # count_syscalls = bpf_switch.get_table("count_syscalls")
     # switch_out_invaluntary = bpf_switch.get_table("switch_out_invaluntary")
     # print(count_syscalls[0])
