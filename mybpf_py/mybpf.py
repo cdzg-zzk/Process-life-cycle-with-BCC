@@ -13,6 +13,9 @@ import comm_module
 import exit_event as my_exit
 import context_switch_event as my_cs
 import syscall_event as my_syscall
+import cpudist as my_cpudist
+import cpu_freq as my_freq
+import offcpu_time as my_offcpu
 # # arguments
 # examples = """examples:
 #     ./mybpf -p 181           # target process is 181
@@ -36,7 +39,7 @@ import syscall_event as my_syscall
 
 # args.pid = 0
 # args.duration = 5
-duration = timedelta(seconds=int(2))
+duration = timedelta(seconds=int(3))
 # file_path = "/usr/share/bcc/examples/mybpf_c/task_switch.c"  # 文件路径
 # # 打开文件
 # with open(file_path, "r") as file:
@@ -47,14 +50,17 @@ duration = timedelta(seconds=int(2))
 bpf_text = ""
 # bpf_text = my_cs.process_bpf_text(bpf_text)
 # bpf_text = my_exit.process_bpf_text(bpf_text)
-bpf_text = my_syscall.process_bpf_text(bpf_text)
+# bpf_text = my_syscall.process_bpf_text(bpf_text)
+# bpf_text = my_cpudist.process_bpf_text(bpf_text)
+# bpf_text = my_freq.process_bpf_text(bpf_text)
+bpf_text = my_offcpu.process_bpf_text(bpf_text)
 
 id = 0
 
 # common replace operation
 bpf_text = bpf_text.replace('BUILD_TARGET_PID',
                             'u32 target_pid = %s;' % id)
-
+bpf_text = bpf_text.replace('IDLE_FILTER', 'pid == 0')
 if BPF.kernel_struct_has_field(b'task_struct', b'__state') == 1:
     bpf_text = bpf_text.replace('STATE_FIELD', '__state')
 else:
@@ -65,25 +71,32 @@ comm_module.init_bpf_object(bpf_text)
 
 # my_cs.attach_probe(comm_module.bpf_object)
 # my_exit.attach_probe(comm_module.bpf_object)
-my_syscall.attach_probe(comm_module.bpf_object)
-
+# my_syscall.attach_probe(comm_module.bpf_object)
+# my_cpudist.attach_probe(comm_module.bpf_object)
+# my_freq.attach_probe(comm_module.bpf_object)
+my_offcpu.attach_probe(comm_module.bpf_object)
 # open poll buffer 
 # my_cs.open_poll_buffer(comm_module.bpf_object)
 # my_exit.open_poll_buffer(comm_module.bpf_object)
-my_syscall.open_poll_buffer(comm_module.bpf_object)        
+# my_syscall.open_poll_buffer(comm_module.bpf_object)        
 
 
 start_time = datetime.now()
 while not duration or datetime.now() - start_time < duration:
-    print("enter perf buffer poll")
-    comm_module.bpf_object.perf_buffer_poll(timeout=1000)
-    print("exit perf buffer poll")
+    # print("enter perf buffer poll")
+    # comm_module.bpf_object.perf_buffer_poll(timeout=1000)
+    # print("exit perf buffer poll")
+    print("continue")
+    time.sleep(1)
 
 
 
 
 def exit_process():
     print("exit monitor process...")
+    # my_cpudist.process_data()
+    # my_freq.process_data()
+    my_offcpu.process_data()
     # count_syscalls = bpf_switch.get_table("count_syscalls")
     # switch_out_invaluntary = bpf_switch.get_table("switch_out_invaluntary")
     # print(count_syscalls[0])

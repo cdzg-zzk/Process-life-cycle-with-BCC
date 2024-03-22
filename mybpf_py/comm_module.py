@@ -9,8 +9,9 @@ import re
 import os
 
 def init_bpf_object(bpf_text):
+    max_pid = int(open("/proc/sys/kernel/pid_max").read())
     global bpf_object
-    bpf_object = BPF(text=bpf_text)
+    bpf_object = BPF(text=bpf_text, cflags=["-DMAX_PID=%d" % max_pid])
 
 
 SIGNUM_TO_SIGNAME = dict((v, re.sub("^SIG", "", k))
