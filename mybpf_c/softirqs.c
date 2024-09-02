@@ -1,38 +1,48 @@
 #include <uapi/linux/ptrace.h>
 
-typedef struct entry_key {
+// 可能还要记录何时结束软中断
+typedef struct softirq_entry_key {
     u32 pid;
     u32 cpu;
-} entry_key_t;
-
-typedef struct irq_key {
+} softirq_entry_key_t;
+typedef struct soft_irq_enter_data {
     u32 vec;
-    u64 slot;
-} irq_key_t;
+    u64 timestamp;
+} soft_irq_enter_data_t;
+typedef struct soft_irq_exit_data {
+    u32 vec;
+    u64 duration;
+    u64 timestamp;
+} soft_irq_exit_data_t;
 
-typedef struct account_val {
+struct soft_val {
     u64 ts;
     u32 vec;
-} account_val_t;
+};
 
-BPF_HASH(softorqs_start, entry_key_t, account_val_t);
-BPF_HISTOGRAM(softirqs_dist, irq_key_t);
+BPF_HASH(softorqs_start, softirq_entry_key_t, struct soft_val);
+BPF_QUEUE(softirq_enter_queue, soft_irq_enter_data_t, 1024);
+BPF_QUEUE(softirq_exit_queue, soft_irq_exit_data_t, 1024);
 
 TRACEPOINT_PROBE(irq, softirq_entry)
 {
     u32 curr_pid = bpf_get_current_pid_tgid();
-    if(curr_pid != 1) {
+    BUILD_TARGET_PID
+    if(curr_pid != target_pid) {
         return 0;
     }
-    account_val_t val = {};
-    entry_key_t key = {};
+    struct soft_val val = {};
+    softirq_entry_key_t key = {};
     u32 cpu = bpf_get_smp_processor_id();
 
     key.pid = curr_pid;
     key.cpu = cpu;
     val.ts = bpf_ktime_get_ns();
     val.vec = args->vec;
-
+    soft_irq_enter_data_t data = {};
+    data.timestamp = val.ts;
+    data.vec = args->vec;
+    softirq_enter_queue.push(&data, BPF_EXIST);
     softorqs_start.update(&key, &val);
 
     return 0;
@@ -40,34 +50,31 @@ TRACEPOINT_PROBE(irq, softirq_entry)
 
 TRACEPOINT_PROBE(irq, softirq_exit)
 {
+    // bpf_trace_printk("soft_irq");
     u32 curr_pid = bpf_get_current_pid_tgid();
-    if(curr_pid != 1) {
+    BUILD_TARGET_PID
+    if(curr_pid != target_pid) {
         return 0;
     }
-    u64 delta;
-    u32 vec;
-    account_val_t *valp;
-    irq_key_t key = {0};
-    entry_key_t entry_key = {};
+    bpf_trace_printk("target soft irq");
+    struct soft_val *valp;
+    soft_irq_exit_data_t data = {};
+    softirq_entry_key_t entry_key = {};
     u32 cpu = bpf_get_smp_processor_id();
-
+    u64 ts = bpf_ktime_get_ns();
 
     entry_key.pid = curr_pid;
     entry_key.cpu = cpu;
 
     // fetch timestamp and calculate delta
     valp = softorqs_start.lookup(&entry_key);
-    if (valp == 0) {
+    if (valp == NULL) {
         return 0;   // missed start
     }
-    delta = bpf_ktime_get_ns() - valp->ts;
-    vec = valp->vec;
-
-    // store as sum or histogram
-    key.vec = vec; 
-    key.slot = bpf_log2l(delta / 1000);
-    softirqs_dist.atomic_increment(key);
-
+    data.timestamp = ts;
+    data.duration = ts - valp->ts;
+    data.vec = valp->vec; 
+    softirq_exit_queue.push(&data, BPF_EXIST);
     softorqs_start.delete(&entry_key);
     return 0;
 }

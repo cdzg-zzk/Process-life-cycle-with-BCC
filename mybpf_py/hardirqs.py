@@ -7,27 +7,37 @@ import sys
 import errno
 
 def process_bpf_text(bpf_text):
-    raw_text = "#define HARDIRQS\n" + bpf_text
-    script_path = os.path.abspath(__file__)
-    script_directory = os.path.dirname(script_path)
-    script_directory = script_directory.replace('mybpf_py', 'mybpf_c')
-    file_path = script_directory + "/hardirqs.c"
-    # 打开文件
-    with open(file_path, "r") as file:
-        # 读取文件内容
-        raw_text = raw_text + file.read()
-    # other operation
-    raw_text += bpf_text
-    return raw_text
+    raw_text = comm_module.read_file(file_name="hardirqs", HONG="HARDIRQS")
+    bpf_text = raw_text + '\n' + bpf_text
+    return bpf_text
 
 def attach_probe(bpf_object):
     pass
 
 
+
+
 def process_data():
-    dist = comm_module.bpf_object.get_table("hardirqs_dist")
-    print()
-    dist.print_log2_hist("usecs", "hardirq", section_print_fn=bytes.decode)
+    sys.stdout = open('/usr/share/bcc/Process-life-cycle-with-BCC/timeline.txt', 'a')
+    irq_exit_queue = comm_module.bpf_object["irq_exit_queue"]
+    irq_enter_queue = comm_module.bpf_object["irq_enter_queue"]
+
+    
+    for i,v in enumerate(irq_enter_queue.values()):
+        print("TIME: %-12d %s:  EVENT: <HARD IRQ>: HARD IRQ: %-10s enter  PROC STATE: %s" % (v.timestamp - comm_module.start_timestamp, 
+                                                                            comm_module.prefix_str,
+                                                                            v.name.decode(), comm_module.process_state_mapping.get(v.state)))
+    for i,v in enumerate(irq_exit_queue.values()):
+        print("TIME: %-12d %s:  EVENT: <HARD IRQ>: HARD IRQ: %-10s exit DURATION:%d  RES: %s  RET: %d  PROC STATE: %s" % (v.timestamp - comm_module.start_timestamp, 
+                                                                            comm_module.prefix_str,
+                                                                            v.name.decode(), v.duration, 
+                                                                            "handled" if v.ret else "unhandled",
+                                                                            v.ret, comm_module.process_state_mapping.get(v.state)))
+
+    sys.stdout = sys.__stdout__     
+# def process_data():
+#     dist = comm_module.bpf_object.get_table("hardirqs_dist")
+#     dist.print_log2_hist("usecs", "hardirq", section_print_fn=bytes.decode)
 
 
 

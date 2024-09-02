@@ -1,7 +1,7 @@
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
 
-#ifdef CPUDIST
+// 进程两次执行之间经过的时间
 typedef struct entry_key {
     u32 pid;
     u32 cpu;
@@ -77,5 +77,3 @@ BAIL:
 
     return 0;
 }
-
-#endif

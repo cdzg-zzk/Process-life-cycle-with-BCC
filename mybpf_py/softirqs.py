@@ -7,18 +7,9 @@ import sys
 import errno
 
 def process_bpf_text(bpf_text):
-    raw_text = "#define OFFCPU\n" + bpf_text
-    script_path = os.path.abspath(__file__)
-    script_directory = os.path.dirname(script_path)
-    script_directory = script_directory.replace('mybpf_py', 'mybpf_c')
-    file_path = script_directory + "/softirqs.c"
-    # 打开文件
-    with open(file_path, "r") as file:
-        # 读取文件内容
-        raw_text = raw_text + file.read()
-    # other operation
-    raw_text += bpf_text
-    return raw_text
+    raw_text = comm_module.read_file("softirqs", "SOFTIRQS")
+    bpf_text = raw_text + '\n' + bpf_text
+    return bpf_text
 
 def attach_probe(bpf_object):
     pass
@@ -29,10 +20,32 @@ def vec_to_name(vec):
     # may need updates if new softirq handlers are added
     return ["hi", "timer", "net_tx", "net_rx", "block", "irq_poll",
             "tasklet", "sched", "hrtimer", "rcu"][vec]
+
 def process_data():
-    dist = comm_module.bpf_object.get_table("softirqs_dist")
-    print()
-    dist.print_log2_hist("usecs", "softirq", section_print_fn=vec_to_name)
+    sys.stdout = open('/usr/share/bcc/Process-life-cycle-with-BCC/timeline.txt', 'a')
+    softirq_exit_queue = comm_module.bpf_object["softirq_exit_queue"]
+    softirq_enter_queue = comm_module.bpf_object["softirq_enter_queue"]
+    for i,v in enumerate(softirq_enter_queue.values()):
+        print("TIME: %-12d %s:  EVENT: <SOFT IRQ>: SOFT IRQ: %-10s enter" % (v.timestamp - comm_module.start_timestamp, 
+                                                                            comm_module.prefix_str,
+                                                                            vec_to_name(v.vec)))
+    for i,v in enumerate(softirq_exit_queue.values()):
+        print("TIME: %-12d %s:  EVENT: <SOFT IRQ>: SOFT IRQ: %-10s exit DURATION: %d" % (v.timestamp - comm_module.start_timestamp, 
+                                                                            comm_module.prefix_str,
+                                                                            vec_to_name(v.vec), v.duration))  
+    sys.stdout = sys.__stdout__        
+
+
+
+
+
+
+
+
+# def process_data():
+#     dist = comm_module.bpf_object.get_table("softirqs_dist")
+#     print()
+#     dist.print_log2_hist("usecs", "softirq", section_print_fn=vec_to_name)
 
 
 
