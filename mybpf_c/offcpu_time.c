@@ -1,6 +1,7 @@
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
-
+// 测量一个进程被剥夺CPU时长，也可以加到task_switch中，只需要加一个queue，struct
+// (start应该是不需要的， 如果没有delete)
 
 struct key_t {
     u32 pid;
@@ -16,20 +17,19 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     u32 prev_pid = prev->pid;
     u64 ts, *tsp;
     u32 curr_pid = bpf_get_current_pid_tgid();
-    BUILD_TARGGET_PID
+    BUILD_TARGET_PID
     if((prev_pid != target_pid) && (curr_pid != target_pid)) {
         return 0;
     }
     if(prev_pid == target_pid) {
         ts = bpf_ktime_get_ns();
-        start.update(&pid, &ts);
-        return 0;
+        start.update(&prev_pid, &ts);
     }
 
     // get the current thread's start time
 
 
-    tsp = start.lookup(&pid);
+    tsp = start.lookup(&curr_pid);
     if (tsp == 0) {
         return 0;        // missed start or filtered
     }
@@ -37,7 +37,7 @@ int oncpu(struct pt_regs *ctx, struct task_struct *prev) {
     // calculate current thread's delta time
     u64 t_start = *tsp;
     u64 t_end = bpf_ktime_get_ns();
-    start.delete(&pid);
+    start.delete(&curr_pid);
     if (t_start > t_end) {
         return 0;
     }

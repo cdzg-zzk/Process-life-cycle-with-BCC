@@ -1,0 +1,9 @@
+TIME: 1315298521   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 17  SIGCHLD [FROM_PROC: 18002 ls             ] sent to [RECV_PRC:18001 benchmark      ]  RES:1  ERRNO:0
+TIME: 2379153369   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [FROM_PROC: 18733 kworker/u2:0   ] sent to [RECV_PRC:18001 benchmark      ]  RES:0  ERRNO:0
+TIME: 2379598428   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [PROC: 18001 benchmark      ] deliver signal ERRNO: 0:
+TIME: 2604513340   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [FROM_PROC: 18171 kworker/u2:2   ] sent to [RECV_PRC:18001 benchmark      ]  RES:0  ERRNO:0
+TIME: 2604578433   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [PROC: 18001 benchmark      ] deliver signal ERRNO: 0:
+TIME: 2775044755   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [FROM_PROC: 18733 kworker/u2:0   ] sent to [RECV_PRC:18001 benchmark      ]  RES:0  ERRNO:0
+TIME: 2775466321   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [PROC: 18001 benchmark      ] deliver signal ERRNO: 0:
+TIME: 3395221112   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [FROM_PROC: 18171 kworker/u2:2   ] sent to [RECV_PRC:18001 benchmark      ]  RES:0  ERRNO:0
+TIME: 3398469863   COMM: benchmark PID: 18001:  EVENT: <SIGNAL>: SIG: 2   SIGINT [PROC: 18001 benchmark      ] deliver signal ERRNO: 0:

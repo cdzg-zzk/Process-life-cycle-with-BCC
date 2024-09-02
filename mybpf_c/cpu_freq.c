@@ -1,17 +1,16 @@
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
 #include <linux/cpufreq.h>
-
+// cpufreq
 BPF_HISTOGRAM(freq_hist, u64, 25);
 
 TRACEPOINT_PROBE(power, cpu_frequency)
 {
-    bpf_trace_printk("cpu_id,xxixi");
     u32 pid = bpf_get_current_pid_tgid();
-    BUILD_TARGET_PID
-    if(pid != target_pid) {
-        return 0;
-    }
+    // BUILD_TARGET_PID
+    // if(pid != target_pid) {
+    //     return 0;
+    // }
     u64 cpu = args->cpu_id;
     u64 stat = args->state;
     bpf_trace_printk("cpu_id: %d    freq:%d", cpu, stat);

@@ -6,22 +6,14 @@ import os
 import errno
 
 def process_bpf_text(bpf_text):
-    raw_text = "#define OFFCPU\n" + bpf_text
-    script_path = os.path.abspath(__file__)
-    script_directory = os.path.dirname(script_path)
-    script_directory = script_directory.replace('mybpf_py', 'mybpf_c')
-    file_path = script_directory + "/offcpu_time.c"
-    # 打开文件
-    with open(file_path, "r") as file:
-        # 读取文件内容
-        raw_text = raw_text + file.read()
+    raw_text = comm_module.read_file("offcpu_time", "OFFCPU")
     # other operation
     kernel_stack_get = "stack_traces.get_stackid(ctx, 0)"
     user_stack_get = "stack_traces.get_stackid(ctx, BPF_F_USER_STACK)"
     raw_text = raw_text.replace('USER_STACK_GET', user_stack_get)
     raw_text = raw_text.replace('KERNEL_STACK_GET', kernel_stack_get)
-    raw_text += bpf_text
-    return raw_text
+    bpf_text = raw_text + bpf_text
+    return bpf_text
 
 def attach_probe(bpf_object):
     bpf_object.attach_kprobe(event_re=r'^finish_task_switch$|^finish_task_switch\.isra\.\d$',
